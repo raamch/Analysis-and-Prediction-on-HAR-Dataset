@@ -1,0 +1,94 @@
+---
+title: "Analysis and Prediction on HAR Dataset"
+output:
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.In this project, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+##Summary
+The goal is to predict the manner in which they did the exercise by using the “classe” variable in the training set. We might also use any of the other variables to predict with. During the process we would be creating a report describing how we built model, how cross validation is used, what we think the expected out of sample error is, and why we made the choices you did. We will also use our prediction model to predict 20 different test cases.
+
+##Data Preperation 
+```{r}
+setwd("~/workspace/PML-Prediction")
+# Download files
+if((!file.exists("training.csv")) || (!file.exists("testing.csv")))
+{ download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",destfile="training.csv")
+  download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",destfile="testing.csv")
+}
+# Read files
+train.rawdata <- read.csv("training.csv")
+test.rawdata <- read.csv("testing.csv")
+
+#str(train.rawdata) #str(test.rawdata)
+set.seed(2708)
+library(caret)
+# Exclude Near Zero variance
+test.rawdata  <- test.rawdata[, !(nearZeroVar(train.rawdata, saveMetrics = T))$nzv]
+train.rawdata <- train.rawdata[, !(nearZeroVar(train.rawdata, saveMetrics = T))$nzv]
+
+#dim(train.rawdata)  #dim(test.rawdata)
+#str(train.rawdata) # str(test.rawdata)
+# Exclude NA values
+test.rawdata <-test.rawdata[,colSums(is.na(train.rawdata)) == 0]
+train.rawdata<-train.rawdata[,colSums(is.na(train.rawdata)) == 0]
+#dim(train.rawdata) #dim(test.rawdata)
+#str(train.rawdata) # str(test.rawdata)
+# Exclude User profile data from columns 1 to 5
+train.rawdata <- train.rawdata[ , -c(1:5)]
+test.rawdata <- test.rawdata[ , -c(1:5)]
+dim(train.rawdata)
+dim(test.rawdata)
+```
+
+
+```{r }
+# Split Data for Training and Testing in 70-30 ratio
+trainPart <- createDataPartition(train.rawdata$classe, p = 0.70, list = F)
+train.data <- train.rawdata[trainPart, ]
+test.data <- train.rawdata[-trainPart, ]
+```
+
+## Build Machine Learning Models
+### Decision Tree
+```{r}
+library(rpart)
+modelDT <- rpart(as.factor(classe) ~ ., data = train.data, method = "class")
+library(rattle)
+fancyRpartPlot(modelDT,sub = "")
+```
+
+```{r}
+# Try predicting on testing dataset
+predictDT <- predict(modelDT, test.data, type = "class")
+# build the confusion matrix to see the accuracy of the model
+confusionMatrix(predictDT, test.data$classe) 
+```
+
+Decision Tree Model is predicting with 73.03% accuracy and 26.97% error rate.
+
+### Random Forest Model
+```{r}
+library(randomForest)
+modelRF <- randomForest(as.factor(classe) ~ ., data = train.data)
+# make prediction on testing dataset
+predictRF <- predict(modelRF, test.data, type = "class")
+# build the confusion matrix to see the accuracy of the model
+confusionMatrix(predictRF, test.data$classe)
+```
+Random Forrest Model is predicting with 99.76% accuracy and 0.24% error rate.
+
+##Conclusion
+Random Forest model gives better predection (99.76%) over Decission Tree model (73.03%). so, appying Random Forest model on test data.
+
+##Predictions
+```{r}
+predict(modelRF, newdata = test.rawdata)
+```
