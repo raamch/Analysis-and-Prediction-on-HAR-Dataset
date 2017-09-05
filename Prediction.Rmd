@@ -1,8 +1,6 @@
 ---
 title: "Analysis and Prediction on HAR Dataset"
-output:
-  html_document:
-    keep_md: yes
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -17,7 +15,7 @@ The goal is to predict the manner in which they did the exercise by using the â€
 
 ##Data Preperation 
 ```{r}
-setwd("~/workspace/PML-Prediction")
+#setwd("~/workspace/PML-Prediction")
 # Download files
 if((!file.exists("training.csv")) || (!file.exists("testing.csv")))
 { download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",destfile="training.csv")
@@ -57,7 +55,7 @@ test.data <- train.rawdata[-trainPart, ]
 ```
 
 ## Build Machine Learning Models
-### Decision Tree
+### 1. Decision Tree
 ```{r}
 library(rpart)
 modelDT <- rpart(as.factor(classe) ~ ., data = train.data, method = "class")
@@ -74,7 +72,7 @@ confusionMatrix(predictDT, test.data$classe)
 
 Decision Tree Model is predicting with 73.03% accuracy and 26.97% error rate.
 
-### Random Forest Model
+### 2. Random Forest Model
 ```{r}
 library(randomForest)
 modelRF <- randomForest(as.factor(classe) ~ ., data = train.data)
